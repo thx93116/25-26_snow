@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互動式輕井澤滑雪行程規劃</title>
+    <!-- Chosen Palette: Warm Neutral Bliss -->
+    <!-- Application Structure Plan: The SPA is designed with a top-down information architecture, starting with a sticky navigation bar for high-level access to key travel planning domains: Itinerary, Transport, Budget, and Activities. This thematic structure was chosen over a purely chronological one to allow users to quickly find information based on their immediate needs (e.g., "How do we get there?" or "What's the budget?"). The main view, "行程總覽", uses an interactive timeline to present the day-by-day plan, which is more engaging than a long text list. Clicks on each day reveal details, keeping the interface clean. Other sections use cards and interactive charts to break down complex information like budget and transport options, making them easier to compare and digest. This structure caters to both the planner who needs to see the big picture and the traveler who needs specific details on the fly, directly addressing the user's need to manage a multi-faceted trip with diverse participants (skiers and non-skiers). -->
+    <!-- Visualization & Content Choices: 
+        - Itinerary Timeline (HTML/CSS/JS): Report Info -> 9-day schedule. Goal -> Organize & Inform. Viz -> Interactive vertical timeline. Interaction -> Click to expand/collapse day details. Justification -> More engaging and less overwhelming than a long scroll of text. Method -> Custom HTML/CSS with Tailwind, JS for interactivity.
+        - Budget Breakdown (Chart.js Donut Chart): Report Info -> Estimated costs for flight, lodging, ski pass, etc. Goal -> Inform & Compare. Viz -> Donut Chart. Interaction -> Hover to see details of each cost category. Justification -> Provides an immediate, easy-to-understand visual summary of where the money goes, which is more impactful than a simple table. Library -> Chart.js on Canvas.
+        - Transport Comparison (HTML/CSS/JS Tabs): Report Info -> Pros and cons of Shinkansen, Bus, Rental Car. Goal -> Compare. Viz -> Tabbed content cards. Interaction -> Click tabs to switch between transport methods. Justification -> Allows for direct, side-by-side comparison of key factors (cost, time, luggage convenience) without cluttering the screen. Method -> Custom HTML/CSS with Tailwind, JS for tab switching.
+        - Activity Cards (HTML/CSS/Grid): Report Info -> Details on ski slopes, outlet stores, sightseeing spots. Goal -> Organize & Inform. Viz -> Grid of content cards with icons. Interaction -> None (static info display). Justification -> A visually organized way to separate activities for skiers and non-skiers, making it easy for each group to find relevant information. Method -> HTML/CSS with Tailwind.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #F8F5F2; /* Warm Neutral BG */
+            color: #4A4A4A;
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #1E3A8A; /* Dark Blue Accent */
+            border-bottom-color: #1E3A8A;
+        }
+        .mobile-nav-link {
+            transition: all 0.2s ease-in-out;
+        }
+        .mobile-nav-link.active {
+            color: #1E3A8A;
+            border-bottom-color: #1E3A8A;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .timeline-item .details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .timeline-item.open .details {
+            max-height: 1000px; /* Adjust as needed */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: auto;
+            max-height: 450px;
+        }
+        /* Hide scrollbar for mobile nav */
+        .mobile-nav-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .mobile-nav-scroll {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-lg sm:text-xl font-bold text-gray-800">⛷️ 輕井澤滑雪之旅</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">行程總覽</a>
+                        <a href="#transport" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">交通攻略</a>
+                        <a href="#budget" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">預算分析</a>
+                        <a href="#activities" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">活動推薦</a>
+                        <a href="#prep" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">行前準備</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- New Mobile Nav Bar -->
+        <nav class="md:hidden bg-white border-b border-gray-200">
+            <div id="mobile-nav-container" class="px-2 overflow-x-auto whitespace-nowrap mobile-nav-scroll">
+                <a href="#overview" class="mobile-nav-link inline-block py-3 px-4 text-sm font-medium text-gray-600 border-b-2 border-transparent">行程總覽</a>
+                <a href="#transport" class="mobile-nav-link inline-block py-3 px-4 text-sm font-medium text-gray-600 border-b-2 border-transparent">交通攻略</a>
+                <a href="#budget" class="mobile-nav-link inline-block py-3 px-4 text-sm font-medium text-gray-600 border-b-2 border-transparent">預算分析</a>
+                <a href="#activities" class="mobile-nav-link inline-block py-3 px-4 text-sm font-medium text-gray-600 border-b-2 border-transparent">活動推薦</a>
+                <a href="#prep" class="mobile-nav-link inline-block py-3 px-4 text-sm font-medium text-gray-600 border-b-2 border-transparent">行前準備</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <section id="overview" class="section">
+            <div class="text-center mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">行程總覽</h2>
+                <p class="text-base md:text-lg text-gray-600 max-w-3xl mx-auto">這是一趟為期九天八夜的夢幻雪國假期。點擊下方每日行程，即可展開或收合詳細活動內容，讓您輕鬆掌握每一天的精彩冒險。</p>
+            </div>
+            <div id="timeline-container" class="relative max-w-3xl mx-auto">
+                <!-- Timeline items will be injected here by JavaScript -->
+            </div>
+        </section>
+
+        <section id="transport" class="section">
+            <div class="text-center mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">交通攻略</h2>
+                <p class="text-base md:text-lg text-gray-600 max-w-3xl mx-auto">從東京前往輕井澤，交通選擇多元。特別是當您購買了新的雪板後，行李問題更需考量。此處為您比較幾種主要交通方式的優劣，助您做出最佳決策。</p>
+            </div>
+            <div class="max-w-4xl mx-auto">
+                <div class="flex justify-center mb-6 border-b border-gray-200 text-sm">
+                    <button data-tab="shinkansen" class="transport-tab py-3 px-4 block hover:text-blue-600 focus:outline-none text-blue-600 border-b-2 font-medium border-blue-600">🚄 北陸新幹線</button>
+                    <button data-tab="bus" class="transport-tab py-3 px-4 block hover:text-blue-600 focus:outline-none text-gray-500">🚌 高速巴士</button>
+                    <button data-tab="car" class="transport-tab py-3 px-4 block hover:text-blue-600 focus:outline-none text-gray-500">🚗 包車/租車</button>
+                </div>
+                <div id="transport-content" class="p-4 bg-white rounded-lg shadow">
+                </div>
+            </div>
+        </section>
+
+        <section id="budget" class="section">
+            <div class="text-center mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">預算分析</h2>
+                <p class="text-base md:text-lg text-gray-600 max-w-3xl mx-auto">本次行程適逢年末年始旺季，費用相對較高。下方的互動圖表與預算細項能幫助您了解各項支出的佔比，提早規劃，聰明消費。</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 items-center max-w-6xl mx-auto">
+                <div class="chart-container">
+                    <canvas id="budgetChart"></canvas>
+                </div>
+                <div id="budget-details" class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="font-bold text-xl mb-4 border-b pb-2">預估費用細項 (每人)</h3>
+                </div>
+            </div>
+        </section>
+
+        <section id="activities" class="section">
+            <div class="text-center mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">活動推薦</h2>
+                <p class="text-base md:text-lg text-gray-600 max-w-3xl mx-auto">輕井澤的魅力不僅止於滑雪。這裡為滑雪愛好者與希望享受悠閒時光的旅伴，分別整理了推薦的活動，確保每個人都能找到屬於自己的樂趣。</p>
+            </div>
+
+            <div class="mb-12">
+                <h3 class="text-xl md:text-2xl font-bold text-center text-gray-800 mb-6">⛷️ For Skiers: 雪場雪道介紹</h3>
+                <div id="ski-slopes" class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xl md:text-2xl font-bold text-center text-gray-800 mb-6">🛍️ For Non-Skiers: 購物與觀光</h3>
+                <div id="non-ski-activities" class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                </div>
+            </div>
+        </section>
+
+        <section id="prep" class="section">
+            <div class="text-center mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">行前準備與溫馨提示</h2>
+                <p class="text-base md:text-lg text-gray-600 max-w-3xl mx-auto">萬全的準備是旅程順利的基石。這裡為您整理了幾項關鍵的行前準備事項與實用提示，讓您的旅途更安心、更愉快。</p>
+            </div>
+            <div id="prep-list" class="max-w-3xl mx-auto space-y-6">
+            </div>
+        </section>
+
+    </main>
+    
+<script>
+const AppData = {
+    timeline: [
+        { day: '第一日', date: '12/27 (五)', icon: '✈️', title: '抵達東京，雪具採購任務！', details: '搭機抵達東京成田或羽田機場。啟用JR東京廣域周遊券，搭乘N\'EX或東京單軌電車至市區。前往神田/御茶之水雪具街，推薦店家如Victoria、FUSO等，選購個人雪具。晚上入住鄰近東京或上野車站的飯店，方便隔日出發。' },
+        { day: '第二日', date: '12/28 (六)', icon: '🚆', title: '前進輕井澤！開啟雪國模式', details: '使用JR Pass搭乘北陸新幹線前往輕井澤 (約1-1.5小時)。入住飯店，推薦靠近雪場的王子大飯店東館/西館。傍晚可先至輕井澤王子購物廣場(Outlet)熟悉環境及用餐。' },
+        { day: '第三日', date: '12/29 (日)', icon: '⛷️', title: '滑雪初體驗 & Outlet時光', details: '【滑雪組】全日於輕井澤王子大飯店滑雪場暢滑！從初級雪道開始，熟悉新裝備與雪況。<br>【非滑雪組】在Outlet享受購物樂趣，正好趕上冬季大減價，並可在美食街或特色餐廳用餐。' },
+        { day: '第四日', date: '12/30 (一)', icon: '⛷️', title: '技巧精進日', details: '【滑雪組】挑戰更多不同的初、中級雪道，如パノラマコース，欣賞淺間山美景。可考慮預約教練課程精進技巧。<br>【非滑雪組】可前往舊輕井澤銀座通，品嚐果醬、麵包與咖啡，感受懷舊街道風情。' },
+        { day: '第五日', date: '12/31 (二)', icon: '🎆', title: '雪地跨年夜', details: '【全員】白天持續享受滑雪或購物行程。晚上留意飯店或雪場周邊是否有跨年倒數活動，體驗在雪國迎接新年的獨特氛圍。' },
+        { day: '第六日', date: '1/1 (三)', icon: '🎉', title: '新年第一滑！', details: '【全員】元旦體驗「初滑り」(新年第一滑)的樂趣！非滑雪組可趁1/1-1/3搶購Outlet推出的新年福袋，試試手氣。' },
+        { day: '第七日', date: '1/2 (四)', icon: '🏙️', title: '告別雪山，返回東京迎新年', details: '上午在輕井澤做最後巡禮。下午搭乘新幹線返回東京（此段車票需另外購買）。抵達後可體驗東京新年氛圍，如前往明治神宮「初詣」參拜，或到百貨公司參與「初賣」搶福袋。' },
+        { day: '第八日', date: '1/3 (五)', icon: '🛍️', title: '東京自由日/伴手禮採購', details: '全日東京自由活動。可安排景點觀光(淺草、澀谷等)，或是在各大百貨、藥妝店進行最後的伴手禮採購。' },
+        { day: '第九日', date: '1/4 (六)', icon: '🛫', title: '滿載回憶，踏上歸途', details: '整理行囊，從市區搭乘交通工具前往機場，辦理登機手續，搭機返回台北，結束愉快的旅程。' }
+    ],
+    transport: {
+        shinkansen: {
+            title: '🚄 北陸新幹線 (Hokuriku Shinkansen)',
+            points: [
+                '<strong>速度與舒適：</strong>最快選擇，從東京到輕井澤約1小時至1.5小時。',
+                '<strong>費用：</strong>單程約 ¥5,500 - ¥5,900。可使用JR東京廣域周遊券 (前三天)。',
+                '<strong>大型行李：</strong>北陸新幹線目前未強制預約特大行李位，但建議將雪板袋放置於車廂前後的行李空間。旺季人多，空間可能有限。',
+                '<strong>優點：</strong>快速、準時、舒適。',
+                '<strong>缺點：</strong>費用較高，尖峰時段大型行李置放可能是個挑戰。'
+            ]
+        },
+        bus: {
+            title: '🚌 高速巴士',
+            points: [
+                '<strong>經濟實惠：</strong>價格最具優勢，單程約 ¥2,400 - ¥2,900。',
+                '<strong>車程：</strong>約3小時，可能受路況影響。',
+                '<strong>大型行李：</strong>對大型行李通常較友善，部分巴士公司 (如Orion Bus) 註明可免費託運雪板，但務必於預訂前再次確認各公司規定。',
+                '<strong>優點：</strong>價格便宜，可能直達雪場或飯店，省去轉乘。',
+                '<strong>缺點：</strong>時間長，舒適度不如新幹線，時間易受路況影響。'
+            ]
+        },
+        car: {
+            title: '🚗 包車/租車自駕',
+            points: [
+                '<strong>最高彈性：</strong>行程完全自由，點對點移動。',
+                '<strong>費用：</strong>成本最高。包含租車費、雪胎費用、高速公路過路費(單程約¥4,000-¥7,000)、油資、停車費等。',
+                '<strong>冬季駕駛：</strong>輕井澤冬季路面可能結冰或積雪，駕駛需具備雪地駕駛經驗並使用雪胎。',
+                '<strong>優點：</strong>彈性最大，行李搬運最方便。',
+                '<strong>缺點：</strong>總費用高昂，需承擔雪地駕駛風險，且新年期間可能塞車。'
+            ]
+        }
+    },
+    budget: {
+        chartData: [11000, 3300, 1280, 12320, 15400, 7750, 13200],
+        labels: ['機票', 'JR Pass', '回程交通', '東京住宿', '輕井澤住宿', '滑雪票', '餐飲雜支'],
+        details: [
+            { item: '國際線來回機票', cost: 'NT$ 7,000 - 15,000', note: '旺季價格，浮動大' },
+            { item: 'JR東京廣域周遊券', cost: 'NT$ 3,300 (¥15,000)', note: '涵蓋前3日主要交通' },
+            { item: '輕井澤→東京 交通費', cost: 'NT$ 530 - 1,280', note: '依巴士或新幹線' },
+            { item: '東京住宿 (4晚)', cost: '約 NT$ 12,320', note: '旺季雙人房均價預估' },
+            { item: '輕井澤住宿 (4晚)', cost: '約 NT$ 15,400', note: '旺季雪場飯店預估' },
+            { item: '滑雪場雪票 (4天)', cost: '約 NT$ 7,750 (¥35,200)', note: '線上優惠價' },
+            { item: '餐飲及雜支 (8天)', cost: '約 NT$ 13,200', note: '依個人消費習慣' },
+            { item: '<strong>雪具採購 (另計)</strong>', cost: '<strong>NT$ 11,000 - 33,000+</strong>', note: '<strong>此項依個人選擇差異大，不計入圖表</strong>' },
+            { item: '<strong>預估總花費 (每人)</strong>', cost: '<strong>約 NT$ 64,250 起</strong>', note: '<strong>不含雪具採購及個人購物</strong>' }
+        ]
+    },
+    skiSlopes: [
+        { level: '初級', color: 'bg-green-100', textColor: 'text-green-800', name: 'プリンスゲレンデ', details: '坡度平緩，視野開闊，位於東館前方，適合初學者與家庭。' },
+        { level: '初級', color: 'bg-green-100', textColor: 'text-green-800', name: 'ファミリーコース', details: '長度超過1公里，雪道寬，坡度穩定，非常受歡迎。' },
+        { level: '中級', color: 'bg-blue-100', textColor: 'text-blue-800', name: 'パノラマコース', details: '擁有絕佳的眺望視野，可朝著淺間山方向滑行，享受美景。' },
+        { level: '中級', color: 'bg-blue-100', textColor: 'text-blue-800', name: 'パラレルコース', details: '可正面欣賞淺間山，坡度適中，適合進階練習。' },
+        { level: '上級', color: 'bg-red-100', textColor: 'text-red-800', name: 'スラロームバーン', details: '整片陡坡，最大坡度達26度，考驗滑雪技巧。' },
+        { level: '上級', color: 'bg-red-100', textColor: 'text-red-800', name: 'アリエスカコース', details: '雪場內最具挑戰性的雪道，最大坡度超過30度，高手限定。' }
+    ],
+    nonSkiActivities: [
+        {
+            title: '🛍️ 輕井澤王子購物廣場 (Outlet)',
+            details: '匯集超過200家店鋪，從國際精品到日系品牌、運動用品、伴手禮應有盡有。旅程期間正逢<strong>冬季大減價</strong>(12/27-1/6)與<strong>新年福袋</strong>(1/1-1/3)，是購物的大好時機。園區內還有美食街、餐廳、湖泊及草坪，環境優美，非常適合悠閒度過一天。'
+        },
+        {
+            title: '🍰 舊輕井澤銀座通',
+            details: '充滿懷舊風情的商店街，有許多特色小店值得探索。必訪店家包括：<strong>淺野屋麵包店</strong>的水果麵包、<strong>Mikado Coffee</strong>的摩卡霜淇淋、<strong>澤屋果醬</strong>的天然果醬，以及超人氣的<strong>川上庵</strong>蕎麥麵。街道周邊還有聖保羅天主教堂等景點可漫步遊覽。'
+        }
+    ],
+    prep: [
+        { icon: '🛂', title: '護照與簽證', details: '確認護照效期六個月以上。台灣護照赴日觀光免簽。' },
+        { icon: '✈️', title: '機票與住宿', details: '新年為超級旺季，務必提前3-6個月預訂，以確保機位與住宿並獲得較佳價格。' },
+        { icon: '🎟️', title: '交通票券', details: 'JR Pass及新幹線指定席建議提早上網預訂及劃位，特別是跨區移動的車票。' },
+        { icon: '🧥', title: '服裝與天氣', details: '採用洋蔥式穿搭。輕井澤氣溫較東京更低，可能至零下。務必準備足夠的保暖衣物、防風防水外套、帽子、手套、圍巾。' },
+        { icon: '💴', title: '日幣與支付', details: '建議預先兌換足夠日幣現鈔，以應對部分小店家或餐廳需求。信用卡在大城市及觀光區普及。' },
+        { icon: '⏰', title: '營業時間注意', details: '年末年始(12/31-1/3)期間，許多店家、餐廳、銀行、景點的營業時間會調整或公休，出發前務必查詢官網確認。' }
+    ]
+};
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const sections = document.querySelectorAll('.section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+
+    function updateContent(hash) {
+        const targetHash = hash.substring(1);
+        
+        sections.forEach(section => {
+            section.classList.toggle('active', section.id === targetHash);
+        });
+
+        navLinks.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === hash);
+        });
+        
+        mobileNavLinks.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === hash);
+        });
+
+        window.scrollTo(0, 0);
+    }
+
+    function setupNavigation() {
+        const allLinks = [...navLinks, ...mobileNavLinks];
+        
+        allLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetHash = this.getAttribute('href');
+                history.pushState(null, null, targetHash);
+                updateContent(targetHash);
+            });
+        });
+
+        window.addEventListener('popstate', function() {
+            updateContent(window.location.hash || '#overview');
+        });
+
+        updateContent(window.location.hash || '#overview');
+    }
+
+    function renderTimeline() {
+        const container = document.getElementById('timeline-container');
+        container.innerHTML = ''; 
+
+        // Add the desktop-only center line
+        const desktopLine = document.createElement('div');
+        desktopLine.className = 'hidden md:block absolute left-1/2 top-0 h-full w-0.5 bg-gray-300 -translate-x-1/2';
+        container.appendChild(desktopLine);
+
+        AppData.timeline.forEach((item, index) => {
+            const isEven = index % 2 === 0;
+
+            const timelineItem = document.createElement('div');
+            timelineItem.className = 'timeline-item';
+
+            timelineItem.innerHTML = `
+                <!-- Mobile Layout: Flexbox -->
+                <div class="flex items-start gap-x-4 mb-8 md:hidden">
+                    <!-- Left Side: Icon and connecting line -->
+                    <div class="relative flex-none after:absolute after:top-9 after:left-1/2 after:w-0.5 after:h-full after:bg-gray-300 after:-translate-x-1/2">
+                        <div class="relative z-10 flex items-center justify-center w-8 h-8 mt-1 bg-blue-500 rounded-full text-lg text-white">
+                            ${item.icon}
+                        </div>
+                    </div>
+                    <!-- Right Side: Content Card -->
+                    <div class="flex-grow bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-xl transition-shadow duration-300">
+                        <p class="text-sm text-gray-500">${item.date}</p>
+                        <h4 class="font-bold text-lg mb-1">${item.day}: ${item.title}</h4>
+                        <div class="details text-gray-600 text-sm">
+                            <p>${item.details}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop Layout: Alternating sides -->
+                <div class="hidden md:flex relative mb-8 ${isEven ? '' : 'flex-row-reverse'} justify-between w-full">
+                    <div class="w-5/12"></div>
+                    <div class="absolute left-1/2 top-1 transform -translate-x-1/2 z-10 flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full text-lg text-white">
+                        ${item.icon}
+                    </div>
+                    <div class="w-5/12 bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-xl transition-shadow duration-300">
+                        <p class="text-sm text-gray-500">${item.date}</p>
+                        <h4 class="font-bold text-lg mb-1">${item.day}: ${item.title}</h4>
+                        <div class="details text-gray-600 text-sm">
+                            <p>${item.details}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(timelineItem);
+        });
+        
+        // Add click listener to all cards (mobile and desktop)
+        document.querySelectorAll('.timeline-item .bg-white').forEach(card => {
+            card.addEventListener('click', () => {
+                // Find the closest parent 'timeline-item' and toggle the class on it
+                card.closest('.timeline-item').classList.toggle('open');
+            });
+        });
+    }
+    
+    function renderTransport() {
+        const contentDiv = document.getElementById('transport-content');
+        const tabs = document.querySelectorAll('.transport-tab');
+        
+        function updateTransportContent(transportType) {
+            const data = AppData.transport[transportType];
+            contentDiv.innerHTML = `
+                <h3 class="font-bold text-xl mb-3">${data.title}</h3>
+                <ul class="space-y-2 list-disc list-inside text-gray-700">
+                    ${data.points.map(point => `<li>${point}</li>`).join('')}
+                </ul>
+            `;
+            tabs.forEach(tab => {
+                if (tab.dataset.tab === transportType) {
+                    tab.classList.add('text-blue-600', 'border-blue-600');
+                    tab.classList.remove('text-gray-500');
+                } else {
+                    tab.classList.remove('text-blue-600', 'border-blue-600');
+                    tab.classList.add('text-gray-500');
+                }
+            });
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                updateTransportContent(tab.dataset.tab);
+            });
+        });
+        
+        updateTransportContent('shinkansen');
+    }
+    
+    function renderBudget() {
+        const ctx = document.getElementById('budgetChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: AppData.budget.labels,
+                datasets: [{
+                    label: '預算分配',
+                    data: AppData.budget.chartData,
+                    backgroundColor: ['#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE', '#DBEAFE', '#EFF6FF'],
+                    borderColor: '#F8F5F2',
+                    borderWidth: 4,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { family: "'Noto Sans TC', sans-serif" }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 }).format(context.parsed);
+                                }
+                                return label;
+                            }
+                        },
+                        titleFont: { family: "'Noto Sans TC', sans-serif" },
+                        bodyFont: { family: "'Noto Sans TC', sans-serif" }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+
+        const detailsContainer = document.getElementById('budget-details');
+        const list = document.createElement('ul');
+        list.className = 'space-y-3';
+        AppData.budget.details.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'flex justify-between items-center text-sm';
+            li.innerHTML = `
+                <div>
+                    <span class="font-medium text-gray-800">${item.item}</span>
+                    <p class="text-xs text-gray-500">${item.note}</p>
+                </div>
+                <span class="font-semibold text-gray-900">${item.cost}</span>
+            `;
+            list.appendChild(li);
+        });
+        detailsContainer.appendChild(list);
+    }
+    
+    function renderActivities() {
+        const skiContainer = document.getElementById('ski-slopes');
+        AppData.skiSlopes.forEach(slope => {
+            const card = document.createElement('div');
+            card.className = `p-4 rounded-lg shadow ${slope.color}`;
+            card.innerHTML = `
+                <div class="flex items-baseline">
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${slope.color} ${slope.textColor}">${slope.level}</span>
+                    <h4 class="ml-2 font-bold ${slope.textColor}">${slope.name}</h4>
+                </div>
+                <p class="mt-2 text-sm ${slope.textColor} opacity-90">${slope.details}</p>
+            `;
+            skiContainer.appendChild(card);
+        });
+        
+        const nonSkiContainer = document.getElementById('non-ski-activities');
+        AppData.nonSkiActivities.forEach(activity => {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-6 rounded-lg shadow';
+            card.innerHTML = `
+                <h4 class="font-bold text-xl text-gray-800 mb-2">${activity.title}</h4>
+                <p class="text-gray-600">${activity.details}</p>
+            `;
+            nonSkiContainer.appendChild(card);
+        });
+    }
+
+    function renderPrep() {
+        const container = document.getElementById('prep-list');
+        AppData.prep.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-5 rounded-lg shadow-sm flex items-start space-x-4';
+            card.innerHTML = `
+                <div class="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-blue-100 text-xl">
+                    ${item.icon}
+                </div>
+                <div>
+                    <h4 class="font-bold text-lg text-gray-800">${item.title}</h4>
+                    <p class="text-gray-600">${item.details}</p>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+
+    setupNavigation();
+    renderTimeline();
+    renderTransport();
+    renderBudget();
+    renderActivities();
+    renderPrep();
+});
+</script>
+</body>
+</html>
