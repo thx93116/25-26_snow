@@ -95,7 +95,7 @@
                 <p class="text-base md:text-lg text-gray-600 max-w-3xl mx-auto">這是一趟為期九天八夜的夢幻雪國假期。點擊下方每日行程，即可展開或收合詳細活動內容，讓您輕鬆掌握每一天的精彩冒險。</p>
             </div>
             <div id="timeline-container" class="relative max-w-3xl mx-auto">
-                <div class="absolute left-4 top-0 h-full w-0.5 bg-gray-300 md:left-1/2 md:-translate-x-1/2"></div>
+                <!-- Timeline items will be injected here by JavaScript -->
             </div>
         </section>
 
@@ -305,37 +305,61 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderTimeline() {
         const container = document.getElementById('timeline-container');
-        const line = container.querySelector('.absolute');
-        container.innerHTML = '';
-        if (line) container.appendChild(line);
+        container.innerHTML = ''; 
+
+        // Add the desktop-only center line
+        const desktopLine = document.createElement('div');
+        desktopLine.className = 'hidden md:block absolute left-1/2 top-0 h-full w-0.5 bg-gray-300 -translate-x-1/2';
+        container.appendChild(desktopLine);
 
         AppData.timeline.forEach((item, index) => {
             const isEven = index % 2 === 0;
 
             const timelineItem = document.createElement('div');
-            timelineItem.className = `timeline-item mb-8 relative md:flex ${isEven ? '' : 'md:flex-row-reverse'} md:justify-between w-full`;
-            
+            timelineItem.className = 'timeline-item';
+
             timelineItem.innerHTML = `
-                <div class="hidden md:block md:w-5/12"></div>
-                
-                <div class="absolute left-4 top-1 transform -translate-x-1/2 md:left-1/2 z-10 flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full text-lg text-white">
-                    ${item.icon}
+                <!-- Mobile Layout: Flexbox -->
+                <div class="flex items-start gap-x-4 mb-8 md:hidden">
+                    <!-- Left Side: Icon and connecting line -->
+                    <div class="relative flex-none after:absolute after:top-9 after:left-1/2 after:w-0.5 after:h-full after:bg-gray-300 after:-translate-x-1/2">
+                        <div class="relative z-10 flex items-center justify-center w-8 h-8 mt-1 bg-blue-500 rounded-full text-lg text-white">
+                            ${item.icon}
+                        </div>
+                    </div>
+                    <!-- Right Side: Content Card -->
+                    <div class="flex-grow bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-xl transition-shadow duration-300">
+                        <p class="text-sm text-gray-500">${item.date}</p>
+                        <h4 class="font-bold text-lg mb-1">${item.day}: ${item.title}</h4>
+                        <div class="details text-gray-600 text-sm">
+                            <p>${item.details}</p>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="bg-white rounded-lg shadow-md w-auto ml-12 md:ml-0 md:w-5/12 p-4 cursor-pointer hover:shadow-xl transition-shadow duration-300">
-                    <p class="text-sm text-gray-500">${item.date}</p>
-                    <h4 class="font-bold text-lg mb-1">${item.day}: ${item.title}</h4>
-                    <div class="details text-gray-600 text-sm">
-                        <p>${item.details}</p>
+
+                <!-- Desktop Layout: Alternating sides -->
+                <div class="hidden md:flex relative mb-8 ${isEven ? '' : 'flex-row-reverse'} justify-between w-full">
+                    <div class="w-5/12"></div>
+                    <div class="absolute left-1/2 top-1 transform -translate-x-1/2 z-10 flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full text-lg text-white">
+                        ${item.icon}
+                    </div>
+                    <div class="w-5/12 bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-xl transition-shadow duration-300">
+                        <p class="text-sm text-gray-500">${item.date}</p>
+                        <h4 class="font-bold text-lg mb-1">${item.day}: ${item.title}</h4>
+                        <div class="details text-gray-600 text-sm">
+                            <p>${item.details}</p>
+                        </div>
                     </div>
                 </div>
             `;
             container.appendChild(timelineItem);
         });
-
-        document.querySelectorAll('.timeline-item .bg-white').forEach(item => {
-            item.addEventListener('click', () => {
-                item.closest('.timeline-item').classList.toggle('open');
+        
+        // Add click listener to all cards (mobile and desktop)
+        document.querySelectorAll('.timeline-item .bg-white').forEach(card => {
+            card.addEventListener('click', () => {
+                // Find the closest parent 'timeline-item' and toggle the class on it
+                card.closest('.timeline-item').classList.toggle('open');
             });
         });
     }
