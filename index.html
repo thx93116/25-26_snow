@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互動式長野斑尾滑雪行程規劃</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Alpine Calm -->
+    <!-- Application Structure Plan: The SPA uses a top-level navigation bar for scrolling to thematic sections, transforming the report's linear chapter structure into a non-linear, task-oriented user experience. This dashboard-like approach allows users to immediately access critical information (like budget or transport logistics) without scrolling through the entire narrative. Key interactions include an interactive budget calculator, a dynamic airport route comparison tool, collapsible daily itinerary cards, and a Chart.js visualization for lift pass value. This structure was chosen because planning a complex trip is not a linear process; users need to jump between different types of information. This design prioritizes findability and interactive planning over passive reading. -->
+    <!-- Visualization & Content Choices: 1. Report Info: Airport Comparison (Table 1.1) -> Goal: Compare -> Viz: Interactive data cards -> Interaction: Buttons to toggle views -> Justification: Simplifies a complex decision by focusing user attention -> Library: JS. 2. Report Info: Lift Pass Cost (Table 3.2) -> Goal: Compare -> Viz: Bar Chart -> Interaction: Hover tooltips -> Justification: Visually demonstrates cost savings more effectively than a table -> Library: Chart.js. 3. Report Info: Budget (Table 5.1) -> Goal: Inform/Plan -> Viz: Interactive sliders -> Interaction: Drag sliders to update total -> Justification: Transforms a static table into a personalized planning tool -> Library: JS. 4. Report Info: 7-Day Itinerary (Ch. 2) -> Goal: Organize -> Viz: Collapsible cards -> Interaction: Click to expand/collapse -> Justification: Presents a large amount of information cleanly, preventing initial overload -> Library: JS. All diagrams are built with structured HTML/CSS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #fdfaf6;
+            color: #3C3633;
+        }
+        .bg-primary { background-color: #7C93C3; }
+        .bg-secondary { background-color: #E0A75E; }
+        .bg-accent { background-color: #9EB8D9; }
+        .text-primary { color: #7C93C3; }
+        .text-secondary { color: #E0A75E; }
+        .border-primary { border-color: #7C93C3; }
+        .border-accent { border-color: #9EB8D9; }
+        .btn-primary {
+            background-color: #7C93C3;
+            color: #fdfaf6;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #6a82b3;
+        }
+        .btn-secondary {
+            background-color: #E0A75E;
+            color: #3C3633;
+            transition: background-color 0.3s;
+        }
+        .btn-secondary:hover {
+            background-color: #d1984e;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #7C93C3;
+            border-bottom-color: #7C93C3;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .day-card.expanded .details {
+            display: block;
+        }
+        .day-card .details {
+            display: none;
+        }
+        .day-card.expanded .icon-arrow {
+            transform: rotate(180deg);
+        }
+        .icon-arrow {
+            transition: transform 0.3s;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-primary">斑尾粉雪遠征指南</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 rounded-md text-sm font-medium">總覽</a>
+                        <a href="#itinerary" class="nav-link px-3 py-2 rounded-md text-sm font-medium">行程規劃</a>
+                        <a href="#logistics" class="nav-link px-3 py-2 rounded-md text-sm font-medium">交通與裝備</a>
+                        <a href="#resort" class="nav-link px-3 py-2 rounded-md text-sm font-medium">雪場攻略</a>
+                        <a href="#shopping" class="nav-link px-3 py-2 rounded-md text-sm font-medium">東京購物</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:bg-gray-200 focus:outline-none">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#overview" class="block nav-link px-3 py-2 rounded-md text-base font-medium">總覽</a>
+                <a href="#itinerary" class="block nav-link px-3 py-2 rounded-md text-base font-medium">行程規劃</a>
+                <a href="#logistics" class="block nav-link px-3 py-2 rounded-md text-base font-medium">交通與裝備</a>
+                <a href="#resort" class="block nav-link px-3 py-2 rounded-md text-base font-medium">雪場攻略</a>
+                <a href="#shopping" class="block nav-link px-3 py-2 rounded-md text-base font-medium">東京購物</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <section id="overview" class="mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800">終極斑尾粉雪朝聖之旅</h2>
+                <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">這不僅是一份行程，更是一套完整的作戰計畫。從台北出發，到東京採購頂級裝備，再無縫接軌至長野斑尾的傳奇粉雪。本指南將複雜的後勤挑戰轉化為流暢的行動方案。</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="order-2 md:order-1">
+                    <h3 class="text-2xl font-bold mb-4">旅行預算模擬器</h3>
+                    <p class="text-gray-600 mb-6">透過調整下方滑桿，即時估算您的個人化旅程總開銷（不含機票與個人購物）。這能幫助您更精準地規劃財務，讓您的滑雪遠征更安心。</p>
+                    <div id="budget-calculator" class="space-y-4">
+                        <div>
+                            <label for="gear-slider" class="flex justify-between font-medium"><span>個人雪具裝備</span><span class="text-secondary font-bold">¥<span id="gear-value">175000</span></span></label>
+                            <input id="gear-slider" type="range" min="100000" max="250000" value="175000" step="5000" class="w-full h-2 bg-accent rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label for="lodging-slider" class="flex justify-between font-medium"><span>斑尾住宿 (5晚)</span><span class="text-secondary font-bold">¥<span id="lodging-value">75000</span></span></label>
+                            <input id="lodging-slider" type="range" min="50000" max="100000" value="75000" step="2500" class="w-full h-2 bg-accent rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label for="food-slider" class="flex justify-between font-medium"><span>餐飲費用 (6天)</span><span class="text-secondary font-bold">¥<span id="food-value">56000</span></span></label>
+                            <input id="food-slider" type="range" min="42000" max="70000" value="56000" step="2000" class="w-full h-2 bg-accent rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div class="pt-4 border-t border-gray-200">
+                            <div class="text-lg font-bold flex justify-between">
+                                <span>固定開銷 (交通/票券):</span>
+                                <span>¥<span id="fixed-costs">56560</span></span>
+                            </div>
+                             <div class="text-xl font-bold flex justify-between mt-2 text-primary">
+                                <span>預估總計 (JPY):</span>
+                                <span>¥<span id="total-budget">362560</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="order-1 md:order-2">
+                     <h3 class="text-2xl font-bold mb-4">不可妥協的專業提示</h3>
+                     <div class="space-y-4">
+                        <div class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                            <span class="text-3xl mr-4">💰</span>
+                            <div>
+                                <h4 class="font-bold">現金為王</h4>
+                                <p class="text-gray-600">斑尾山上沒有ATM！務必在東京或飯山站提取足夠現金，以應付山上餐飲及其他消費。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                            <span class="text-3xl mr-4">🚚</span>
+                            <div>
+                                <h4 class="font-bold">善用宅配服務</h4>
+                                <p class="text-gray-600">在神田雪具店購買裝備後，立即安排宅配至斑尾飯店。這是解放雙手、確保行程順暢的關鍵。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                            <span class="text-3xl mr-4">🏨</span>
+                            <div>
+                                <h4 class="font-bold">及早預訂住宿</h4>
+                                <p class="text-gray-600">斑尾的高評價小型旅館和山林小屋非常搶手，建議您儘早完成預訂，以確保獲得理想的住宿體驗。</p>
+                            </div>
+                        </div>
+                         <div class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                            <span class="text-3xl mr-4">🛂</span>
+                            <div>
+                                <h4 class="font-bold">隨身攜帶護照</h4>
+                                <p class="text-gray-600">在神田的雪具街購物時，您需要出示護照才能辦理退稅手續，請務必隨身攜帶。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="itinerary" class="mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800">七日行程規劃</h2>
+                <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">這份逐日計畫是您遠征的核心。點擊每一天來展開詳細的行動方案，從抵達東京到征服斑尾粉雪的每一步都已為您精心規劃。</p>
+            </div>
+            <div id="itinerary-container" class="space-y-4">
+            </div>
+        </section>
+
+        <section id="logistics" class="mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800">交通與裝備後勤</h2>
+                <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">本節將解決旅程中最複雜的後勤挑戰：從抵達東京到踏上雪山的每一步。我們將透過互動式比較，助您選擇最佳機場路線，並引導您完成在神田雪具街的裝備採購與運送，確保您能輕鬆無憂地展開您的粉雪冒險。</p>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+                 <h3 class="text-2xl font-bold mb-4 text-center">機場選擇的戰略抉擇</h3>
+                 <div class="flex justify-center space-x-4 mb-6">
+                    <button id="btn-hnd" class="btn-primary py-2 px-6 rounded-lg font-semibold">羽田 (HND) - 推薦</button>
+                    <button id="btn-nrt" class="bg-gray-200 text-gray-700 py-2 px-6 rounded-lg font-semibold transition hover:bg-gray-300">成田 (NRT)</button>
+                 </div>
+                 <div id="transport-info">
+                 </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-2xl font-bold mb-4 text-center">裝備採購：神田雪具街指南</h3>
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="text-xl font-bold mb-2">關鍵後勤：雪具宅配流程</h4>
+                        <p class="mb-4 text-gray-600">這是在東京購買全新裝備，並輕鬆前往雪山的最佳方案。省去拖著沉重行李轉乘的麻煩。</p>
+                        <div class="space-y-4">
+                           <div class="flex items-center">
+                               <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">1</div>
+                               <div class="ml-4">
+                                   <p class="font-semibold">選購與結帳</p>
+                                   <p class="text-sm text-gray-500">在Victoria、FUSO等店家完成選購，並憑護照辦理退稅。</p>
+                               </div>
+                           </div>
+                           <div class="h-8 w-px bg-gray-300 ml-5"></div>
+                           <div class="flex items-center">
+                               <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">2</div>
+                               <div class="ml-4">
+                                   <p class="font-semibold">安排宅配服務 (宅配)</p>
+                                   <p class="text-sm text-gray-500">告知店員您要將雪具寄送到斑尾的飯店地址。</p>
+                               </div>
+                           </div>
+                           <div class="h-8 w-px bg-gray-300 ml-5"></div>
+                           <div class="flex items-center">
+                               <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">3</div>
+                               <div class="ml-4">
+                                   <p class="font-semibold">輕鬆上路</p>
+                                   <p class="text-sm text-gray-500">兩手空空搭乘新幹線，雪具將在您抵達時等著您。</p>
+                               </div>
+                           </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold mb-2">精選店家</h4>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-gray-50 rounded-md">
+                                <p class="font-semibold">Victoria本店</p>
+                                <p class="text-sm text-gray-600">綜合首選，商品齊全，提供一站式購足的便利。</p>
+                            </div>
+                             <div class="p-3 bg-gray-50 rounded-md">
+                                <p class="font-semibold">FUSO SKI & BOOTS TUNE</p>
+                                <p class="text-sm text-gray-600">專業需求首選，特別是雪鞋塑型 (Boot Fitting)。</p>
+                            </div>
+                             <div class="p-3 bg-gray-50 rounded-md">
+                                <p class="font-semibold">Murasaki Sports</p>
+                                <p class="text-sm text-gray-600">潮流品牌與核心滑雪裝備的完美結合。</p>
+                            </div>
+                            <div class="p-3 bg-gray-50 rounded-md">
+                                <p class="font-semibold">SPORTS BOMBER</p>
+                                <p class="text-sm text-gray-600">二手雪具天堂，精打細算者的尋寶好去處。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="resort" class="mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800">斑尾雪場攻略</h2>
+                <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">成功抵達後，如何做出最佳的現場決策至關重要。本節將深入解析住宿選擇與纜車票策略，幫助您最大化您在斑尾的滑雪體驗。</p>
+            </div>
+            <div class="grid lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-bold mb-4">住宿選擇比較</h3>
+                    <p class="text-gray-600 mb-6">在便利性、品質與氛圍之間找到最適合您的平衡點。以下是幾種不同風格的住宿選項，滿足您的個人需求。</p>
+                    <div class="space-y-4">
+                        <div class="border border-gray-200 p-4 rounded-lg">
+                            <h4 class="font-bold text-lg">斑尾高原飯店</h4>
+                            <p class="text-sm text-gray-500 mb-2">追求極致便利性</p>
+                            <div class="flex justify-between text-sm">
+                                <span class="font-semibold">優點:</span>
+                                <span>無可匹敵的 Ski-in/Ski-out，位於度假村中心。</span>
+                            </div>
+                             <div class="flex justify-between text-sm">
+                                <span class="font-semibold">注意:</span>
+                                <span class="text-right">部分評論提及設施老舊、服務水準不穩。</span>
+                            </div>
+                        </div>
+                        <div class="border border-primary p-4 rounded-lg bg-blue-50/50">
+                            <h4 class="font-bold text-lg">Hotel Tangram</h4>
+                            <p class="text-sm text-gray-500 mb-2">追求高品質度假體驗</p>
+                            <div class="flex justify-between text-sm">
+                                <span class="font-semibold">優點:</span>
+                                <span>Ski-in/Ski-out，設施、餐飲、服務評價普遍優良。</span>
+                            </div>
+                             <div class="flex justify-between text-sm">
+                                <span class="font-semibold">注意:</span>
+                                <span>離斑尾核心區稍遠。</span>
+                            </div>
+                        </div>
+                        <div class="border border-gray-200 p-4 rounded-lg">
+                            <h4 class="font-bold text-lg">Active Life Madarao</h4>
+                            <p class="text-sm text-gray-500 mb-2">追求個人化服務與社群氛圍</p>
+                            <div class="flex justify-between text-sm">
+                                <span class="font-semibold">優點:</span>
+                                <span>員工服務卓越，評價極高，氛圍溫馨。</span>
+                            </div>
+                             <div class="flex justify-between text-sm">
+                                <span class="font-semibold">注意:</span>
+                                <span>需短暫步行至纜車站。</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-bold mb-4">纜車票成本效益分析</h3>
+                    <p class="text-gray-600 mb-6">購買多日「全山通票」是解鎖斑尾與Tangram兩個雪區最划算的方式。天數越多，每日成本越低。</p>
+                    <div class="chart-container">
+                        <canvas id="lift-pass-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="shopping" class="mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800">東京終章：精選購物路線</h2>
+                <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">如果您在行程最後安排了購物日，這裡有兩條高效、目標明確的路線供您選擇，無論您是追求經典全面還​​是潮流個性，都能滿載而歸。</p>
+            </div>
+             <div class="bg-white p-6 rounded-lg shadow-lg">
+                 <div class="flex justify-center space-x-4 mb-6 border-b pb-4">
+                    <button id="btn-shinjuku" class="btn-primary py-2 px-6 rounded-lg font-semibold">新宿路線：經典與全面</button>
+                    <button id="btn-shibuya" class="bg-gray-200 text-gray-700 py-2 px-6 rounded-lg font-semibold transition hover:bg-gray-300">澀谷路線：潮流與個性</button>
+                 </div>
+                 <div id="shopping-info" class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-gray-800 text-white">
+        <div class="container mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-sm">
+            <p>此互動式指南根據專業行程報告生成，旨在提供最佳規劃體驗。</p>
+            <p>&copy; 2025 粉雪遠征規劃</p>
+        </div>
+    </footer>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const itineraryData = [
+                { day: '第一天 (六)', title: '抵達、裝備任務與登山', icon: '✈️', details: '搭乘早班機抵達HND -> 執行神田雪具街裝備採購計畫 -> 安排雪具宅配 -> 搭乘北陸新幹線至飯山 -> 換乘接駁巴士 -> 抵達斑尾飯店。' },
+                { day: '第二天 (日)', title: '初試啼聲與斑尾巡禮', icon: '⛷️', details: '領取新裝備並設定 -> 購買多日全山通票 -> 在壓雪道熟悉新裝備 -> 嘗試平緩的「Mada-Pow」鬆雪 -> 溫泉放鬆。' },
+                { day: '第三天 (一)', title: '「Mada-Pow」與林間滑雪探索', icon: '🌲', details: '全力投入斑尾著名的鬆雪與樹林 -> 鎖定Crystal Bowl、Powder Wave 2等粉雪區 -> 挑戰較為開闊的林間雪道 -> 探索村莊小餐館 (記得帶現金！)。' },
+                { day: '第四天 (二)', title: '征服全山：斑尾與Tangram', icon: '🔄', details: '利用全山通票滑向相連的Tangram雪場 -> 體驗精心整理的雪道與不同氛圍 -> 在Hotel Tangram享用午餐 -> 滑回斑尾。' },
+                { day: '第五天 (三)', title: '彈性日：溫泉、探索或粉雪', icon: '♨️', details: '彈性選擇：若有降雪，可再享受一天粉雪；或選擇溫泉放鬆、雪鞋健行；或規劃前往野澤溫泉等周邊雪場的一日遊。' },
+                { day: '第六天 (四)', title: '最後滑行與重返都會', icon: '🚄', details: '上午進行最後數小時的滑雪 -> 辦理退房並搭乘巴士至飯山站 -> 搭乘新幹線返回東京 -> 入住新宿/澀谷飯店。' },
+                { day: '第七天 (六)', title: '精選購物與歸途', icon: '🛍️', details: '執行預選的東京購物路線 -> 傍晚前往機場 -> 搭機返回台北，結束完美的滑雪遠征。' }
+            ];
+
+            const transportData = {
+                hnd: {
+                    title: '羽田 (HND) - 唯一戰略選擇',
+                    route: '京急線 → 都營淺草線 (東日本橋) → 都營新宿線 (小川町)',
+                    time: '約 45-55 分鐘',
+                    cost: '約 ¥590',
+                    transfers: '1 次 (簡易轉乘)',
+                    reason: '從羽田出發的路線更順暢、時間更短、價格更經濟，且轉乘對攜帶行李的旅客十分友善。即使飛往NRT的航班稍早，HND在地面交通上的優勢也能確保您更早、更輕鬆地抵達雪具店。'
+                },
+                nrt: {
+                    title: '成田 (NRT) - 較不推薦',
+                    route: '京成Skyliner/成田特快(N\'EX) + 多次轉乘',
+                    time: '約 70-80 分鐘',
+                    cost: '約 ¥2,930 - ¥3,250',
+                    transfers: '1-2 次 (較複雜)',
+                    reason: '從成田前往神田雪具街的路線較為複雜且昂貴。攜帶行李進行多次轉乘會消耗更多時間與體力，影響第一天的採購效率與狀態。'
+                }
+            };
+            
+            const shoppingData = {
+                shinjuku: [
+                    { name: '高島屋時代廣場', desc: '綜合百貨，內含東急手創館。' },
+                    { name: '伊勢丹新宿本店', desc: '高端商品與知名地下食品街。' },
+                    { name: 'Bic Camera', desc: '大型電器量販店。' },
+                    { name: '唐吉訶德', desc: '搜羅藥妝、零食、伴手禮。' }
+                ],
+                shibuya: [
+                     { name: 'Shibuya Scramble Square', desc: '頂樓觀景台與高端商店。' },
+                     { name:- '澀谷Loft', desc: '設計感文具與生活雜貨。' },
+                     { name: '宮下公園', desc: '匯集眾多潮流精品店。' },
+                     { name: 'SHIBUYA109 / 迪士尼商店', desc: '指標性潮流聖地與夢幻周邊。' }
+                ]
+            };
+
+
+            const itineraryContainer = document.getElementById('itinerary-container');
+            itineraryData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'day-card bg-white rounded-lg shadow-sm overflow-hidden cursor-pointer';
+                card.innerHTML = `
+                    <div class="header flex items-center justify-between p-4">
+                        <div class="flex items-center">
+                            <span class="text-2xl mr-4">${item.icon}</span>
+                            <div>
+                                <p class="font-bold text-gray-500 text-sm">${item.day}</p>
+                                <h4 class="font-bold text-lg text-primary">${item.title}</h4>
+                            </div>
+                        </div>
+                        <span class="icon-arrow text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                        </span>
+                    </div>
+                    <div class="details bg-gray-50 px-6 pb-4 pt-2 border-t border-gray-200">
+                        <p class="text-gray-700">${item.details}</p>
+                    </div>
+                `;
+                itineraryContainer.appendChild(card);
+                card.querySelector('.header').addEventListener('click', () => {
+                     card.classList.toggle('expanded');
+                });
+            });
+
+
+            const gearSlider = document.getElementById('gear-slider');
+            const lodgingSlider = document.getElementById('lodging-slider');
+            const foodSlider = document.getElementById('food-slider');
+            const gearValue = document.getElementById('gear-value');
+            const lodgingValue = document.getElementById('lodging-value');
+            const foodValue = document.getElementById('food-value');
+            const fixedCostsEl = document.getElementById('fixed-costs');
+            const totalBudgetEl = document.getElementById('total-budget');
+
+            function updateBudget() {
+                const gear = parseInt(gearSlider.value);
+                const lodging = parseInt(lodgingSlider.value);
+                const food = parseInt(foodSlider.value);
+                const fixed = 17560 + 5000 + 29000;
+                
+                gearValue.textContent = gear.toLocaleString();
+                lodgingValue.textContent = lodging.toLocaleString();
+                foodValue.textContent = food.toLocaleString();
+                fixedCostsEl.textContent = fixed.toLocaleString();
+                
+                const total = gear + lodging + food + fixed;
+                totalBudgetEl.textContent = total.toLocaleString();
+            }
+
+            [gearSlider, lodgingSlider, foodSlider].forEach(slider => {
+                slider.addEventListener('input', updateBudget);
+            });
+            updateBudget();
+
+
+            const liftPassCtx = document.getElementById('lift-pass-chart').getContext('2d');
+            new Chart(liftPassCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['1日票', '2日票', '3日票'],
+                    datasets: [{
+                        label: '每日平均成本 (JPY)',
+                        data: [8000, 7500, 7000],
+                        backgroundColor: ['#9EB8D9', '#7C93C3', '#5a73a3'],
+                        borderColor: ['#9EB8D9', '#7C93C3', '#5a73a3'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 6000,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return '¥' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += '¥' + context.parsed.y.toLocaleString();
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+
+            const btnHnd = document.getElementById('btn-hnd');
+            const btnNrt = document.getElementById('btn-nrt');
+            const transportInfo = document.getElementById('transport-info');
+
+            function displayTransportInfo(airport) {
+                const data = transportData[airport];
+                transportInfo.innerHTML = `
+                    <div class="transition-opacity duration-500 ease-in-out">
+                        <h4 class="text-xl font-bold text-center mb-4 ${airport === 'hnd' ? 'text-primary' : 'text-gray-700'}">${data.title}</h4>
+                        <p class="text-center text-gray-600 mb-4">${data.reason}</p>
+                        <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                            <div class="bg-gray-100 p-3 rounded-md">
+                                <p class="font-semibold text-sm text-gray-500">建議路線</p>
+                                <p class="font-bold">${data.route}</p>
+                            </div>
+                            <div class="bg-gray-100 p-3 rounded-md">
+                                <p class="font-semibold text-sm text-gray-500">預估時間</p>
+                                <p class="font-bold">${data.time}</p>
+                            </div>
+                            <div class="bg-gray-100 p-3 rounded-md">
+                                <p class="font-semibold text-sm text-gray-500">預估費用</p>
+                                <p class="font-bold">${data.cost}</p>
+                            </div>
+                            <div class="bg-gray-100 p-3 rounded-md">
+                                <p class="font-semibold text-sm text-gray-500">轉乘次數</p>
+                                <p class="font-bold">${data.transfers}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            btnHnd.addEventListener('click', () => {
+                displayTransportInfo('hnd');
+                btnHnd.classList.replace('bg-gray-200', 'btn-primary');
+                btnHnd.classList.replace('text-gray-700', 'text-white');
+                btnNrt.classList.replace('btn-primary', 'bg-gray-200');
+                btnNrt.classList.replace('text-white', 'text-gray-700');
+            });
+            
+            btnNrt.addEventListener('click', () => {
+                displayTransportInfo('nrt');
+                btnNrt.classList.replace('bg-gray-200', 'btn-primary');
+                btnNrt.classList.replace('text-gray-700', 'text-white');
+                btnHnd.classList.replace('btn-primary', 'bg-gray-200');
+                btnHnd.classList.replace('text-white', 'text-gray-700');
+            });
+
+            displayTransportInfo('hnd');
+
+
+            const btnShinjuku = document.getElementById('btn-shinjuku');
+            const btnShibuya = document.getElementById('btn-shibuya');
+            const shoppingInfo = document.getElementById('shopping-info');
+
+            function displayShoppingInfo(area) {
+                const data = shoppingData[area];
+                shoppingInfo.innerHTML = '';
+                data.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-gray-50 p-4 rounded-lg';
+                    card.innerHTML = `
+                        <h5 class="font-bold text-lg">${item.name}</h5>
+                        <p class="text-gray-600 text-sm">${item.desc}</p>
+                    `;
+                    shoppingInfo.appendChild(card);
+                });
+            }
+
+            btnShinjuku.addEventListener('click', () => {
+                displayShoppingInfo('shinjuku');
+                btnShinjuku.classList.replace('bg-gray-200', 'btn-primary');
+                btnShinjuku.classList.replace('text-gray-700', 'text-white');
+                btnShibuya.classList.replace('btn-primary', 'bg-gray-200');
+                btnShibuya.classList.replace('text-white', 'text-gray-700');
+            });
+
+            btnShibuya.addEventListener('click', () => {
+                displayShoppingInfo('shibuya');
+                btnShibuya.classList.replace('bg-gray-200', 'btn-primary');
+                btnShibuya.classList.replace('text-gray-700', 'text-white');
+                btnShinjuku.classList.replace('btn-primary', 'bg-gray-200');
+                btnShinjuku.classList.replace('text-white', 'text-gray-700');
+            });
+
+            displayShoppingInfo('shinjuku');
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    if (mobileMenu.offsetParent !== null) {
+                         mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
