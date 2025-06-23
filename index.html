@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>長野斑尾滑雪行程規劃</title>
+    <title>長野斑尾滑雪行程規劃 (東京住宿版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Alpine Calm -->
     <!-- Application Structure Plan: The SPA uses a top-level navigation bar for scrolling to thematic sections, transforming the report's linear chapter structure into a non-linear, task-oriented user experience. This dashboard-like approach allows users to immediately access critical information (like budget or transport logistics) without scrolling through the entire narrative. Key interactions include an interactive budget calculator, a dynamic airport route comparison tool, collapsible daily itinerary cards, and a Chart.js visualization for lift pass value. This structure was chosen because planning a complex trip is not a linear process; users need to jump between different types of information. This design prioritizes findability and interactive planning over passive reading. -->
-    <!-- Visualization & Content Choices: 1. Report Info: Airport Comparison (Table 1.1) -> Goal: Compare -> Viz: Interactive data cards -> Interaction: Buttons to toggle views -> Justification: Simplifies a complex decision by focusing user attention -> Library: JS. 2. Report Info: Lift Pass Cost (Table 3.2) -> Goal: Compare -> Viz: Bar Chart -> Interaction: Hover tooltips -> Justification: Visually demonstrates cost savings more effectively than a table -> Library: Chart.js. 3. Report Info: Budget (Table 5.1) -> Goal: Inform/Plan -> Viz: Interactive sliders -> Interaction: Drag sliders to update total -> Justification: Transforms a static table into a personalized planning tool -> Library: JS. 4. Report Info: 7-Day Itinerary (Ch. 2) -> Goal: Organize -> Viz: Collapsible cards -> Interaction: Click to expand/collapse -> Justification: Presents a large amount of information cleanly, preventing initial overload -> Library: JS. All diagrams are built with structured HTML/CSS. -->
+    <!-- Visualization & Content Choices: 1. Report Info: Airport Comparison (Table 1.1) -> Goal: Compare -> Viz: Interactive data cards -> Interaction: Buttons to toggle views -> Justification: Simplifies a complex decision by focusing user attention -> Library: JS. 2. Report Info: Lift Pass Cost (Table 3.2) -> Goal: Compare -> Viz: Bar Chart -> Interaction: Hover tooltips -> Justification: Visually demonstrates cost savings more effectively than a table -> Library: Chart.js. 3. Report Info: Budget (Table 5.1) -> Goal: Inform/Plan -> Viz: Interactive sliders -> Interaction: Drag sliders to update total -> Justification: Transforms a static table into a personalized planning tool -> Library: JS. 4. Report Info: 8-Day Itinerary (Ch. 2) -> Goal: Organize -> Viz: Collapsible cards -> Interaction: Click to expand/collapse -> Justification: Presents a large amount of information cleanly, preventing initial overload -> Library: JS. All diagrams are built with structured HTML/CSS. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
@@ -92,7 +92,6 @@
                         <a href="#itinerary" class="nav-link px-3 py-2 rounded-md text-sm font-medium">行程規劃</a>
                         <a href="#logistics" class="nav-link px-3 py-2 rounded-md text-sm font-medium">交通與裝備</a>
                         <a href="#resort" class="nav-link px-3 py-2 rounded-md text-sm font-medium">雪場攻略</a>
-                        <a href="#shopping" class="nav-link px-3 py-2 rounded-md text-sm font-medium">東京購物</a>
                     </div>
                 </div>
                 <div class="md:hidden">
@@ -111,7 +110,6 @@
                 <a href="#itinerary" class="block nav-link px-3 py-2 rounded-md text-base font-medium">行程規劃</a>
                 <a href="#logistics" class="block nav-link px-3 py-2 rounded-md text-base font-medium">交通與裝備</a>
                 <a href="#resort" class="block nav-link px-3 py-2 rounded-md text-base font-medium">雪場攻略</a>
-                <a href="#shopping" class="block nav-link px-3 py-2 rounded-md text-base font-medium">東京購物</a>
             </div>
         </div>
     </header>
@@ -138,17 +136,17 @@
                             <input id="lodging-slider" type="range" min="50000" max="100000" value="75000" step="2500" class="w-full h-2 bg-accent rounded-lg appearance-none cursor-pointer">
                         </div>
                         <div>
-                            <label for="food-slider" class="flex justify-between font-medium"><span>餐飲費用 (6天)</span><span class="text-secondary font-bold">¥<span id="food-value">56000</span></span></label>
-                            <input id="food-slider" type="range" min="42000" max="70000" value="56000" step="2000" class="w-full h-2 bg-accent rounded-lg appearance-none cursor-pointer">
+                            <label for="food-slider" class="flex justify-between font-medium"><span>餐飲費用 (8天)</span><span class="text-secondary font-bold">¥<span id="food-value">72000</span></span></label>
+                            <input id="food-slider" type="range" min="56000" max="96000" value="72000" step="2000" class="w-full h-2 bg-accent rounded-lg appearance-none cursor-pointer">
                         </div>
                         <div class="pt-4 border-t border-gray-200">
                             <div class="text-lg font-bold flex justify-between">
-                                <span>固定開銷 (交通/票券):</span>
-                                <span>¥<span id="fixed-costs">56560</span></span>
+                                <span>固定開銷 (交通/4日票券/東京住宿1晚):</span>
+                                <span>¥<span id="fixed-costs">64560</span></span>
                             </div>
                              <div class="text-xl font-bold flex justify-between mt-2 text-primary">
                                 <span>預估總計 (JPY):</span>
-                                <span>¥<span id="total-budget">362560</span></span>
+                                <span>¥<span id="total-budget">386560</span></span>
                             </div>
                         </div>
                     </div>
@@ -191,8 +189,8 @@
 
         <section id="itinerary" class="mb-16">
             <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-800">七日行程規劃</h2>
-                <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">這份逐日計畫是您遠征的核心。點擊每一天來展開詳細的行動方案，從抵達東京到征服斑尾粉雪的每一步都已為您精心規劃。</p>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800">八日行程規劃</h2>
+                <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">這份逐日計畫是您遠征的核心。點擊每一天來展開詳細的行動方案，從抵達到歸途的每一步都已為您精心規劃，並包含一日的休息與恢復。</p>
             </div>
             <div id="itinerary-container" class="space-y-4">
             </div>
@@ -329,21 +327,6 @@
             </div>
         </section>
 
-        <section id="shopping" class="mb-16">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-800">東京終章：精選購物路線</h2>
-                <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">如果您在行程最後安排了購物日，這裡有兩條高效、目標明確的路線供您選擇，無論您是追求經典全面還​​是潮流個性，都能滿載而歸。</p>
-            </div>
-             <div class="bg-white p-6 rounded-lg shadow-lg">
-                 <div class="flex justify-center space-x-4 mb-6 border-b pb-4">
-                    <button id="btn-shinjuku" class="btn-primary py-2 px-6 rounded-lg font-semibold">新宿路線：經典與全面</button>
-                    <button id="btn-shibuya" class="bg-gray-200 text-gray-700 py-2 px-6 rounded-lg font-semibold transition hover:bg-gray-300">澀谷路線：潮流與個性</button>
-                 </div>
-                 <div id="shopping-info" class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                 </div>
-            </div>
-        </section>
-
     </main>
     
     <footer class="bg-gray-800 text-white">
@@ -358,13 +341,14 @@
         document.addEventListener('DOMContentLoaded', () => {
 
             const itineraryData = [
-                { day: '第一天 (六)', title: '抵達、裝備任務與登山', icon: '✈️', details: '搭乘早班機抵達HND -> 執行神田雪具街裝備採購計畫 -> 安排雪具宅配 -> 搭乘北陸新幹線至飯山 -> 換乘接駁巴士 -> 抵達斑尾飯店。' },
-                { day: '第二天 (日)', title: '初試啼聲與斑尾巡禮', icon: '⛷️', details: '領取新裝備並設定 -> 購買多日全山通票 -> 在壓雪道熟悉新裝備 -> 嘗試平緩的「Mada-Pow」鬆雪 -> 溫泉放鬆。' },
-                { day: '第三天 (一)', title: '「Mada-Pow」與林間滑雪探索', icon: '🌲', details: '全力投入斑尾著名的鬆雪與樹林 -> 鎖定Crystal Bowl、Powder Wave 2等粉雪區 -> 挑戰較為開闊的林間雪道 -> 探索村莊小餐館 (記得帶現金！)。' },
-                { day: '第四天 (二)', title: '征服全山：斑尾與Tangram', icon: '🔄', details: '利用全山通票滑向相連的Tangram雪場 -> 體驗精心整理的雪道與不同氛圍 -> 在Hotel Tangram享用午餐 -> 滑回斑尾。' },
-                { day: '第五天 (三)', title: '彈性日：溫泉、探索或粉雪', icon: '♨️', details: '彈性選擇：若有降雪，可再享受一天粉雪；或選擇溫泉放鬆、雪鞋健行；或規劃前往野澤溫泉等周邊雪場的一日遊。' },
-                { day: '第六天 (四)', title: '最後滑行與重返都會', icon: '🚄', details: '上午進行最後數小時的滑雪 -> 辦理退房並搭乘巴士至飯山站 -> 搭乘新幹線返回東京 -> 入住新宿/澀谷飯店。' },
-                { day: '第七天 (六)', title: '精選購物與歸途', icon: '🛍️', details: '執行預選的東京購物路線 -> 傍晚前往機場 -> 搭機返回台北，結束完美的滑雪遠征。' }
+                { day: '第一天 (六)', title: '抵達、裝備採購與東京之夜', icon: '✈️', details: '搭乘早班機抵達HND -> 執行神田雪具街裝備採購計畫 -> 安排雪具宅配至斑尾飯店 -> 前往預訂的東京飯店Check-in，享受都會晚餐。' },
+                { day: '第二天 (日)', title: '啟程雪山，初探斑尾', icon: '🚄', details: '上午搭乘北陸新幹線從東京前往飯山 -> 換乘接駁巴士至斑尾 -> 入住飯店，領取宅配雪具 -> 若時間允許，可購買半日券熟悉雪道。' },
+                { day: '第三天 (一)', title: '「Mada-Pow」與林間滑雪首日', icon: '🌲', details: '購買多日全山通票 -> 全力投入斑尾著名的鬆雪與樹林 -> 鎖定Crystal Bowl、Powder Wave 2等粉雪區 -> 晚上享受溫泉放鬆。' },
+                { day: '第四天 (二)', title: '征服全山：斑尾與Tangram', icon: '🔄', details: '利用全山通票滑向相連的Tangram雪場 -> 體驗精心整理的雪道與不同氛圍 -> 在Hotel Tangram享用午餐 -> 滑回斑尾，探索村莊小餐館。' },
+                { day: '第五天 (三)', title: '休息恢復日：溫泉或文化之旅', icon: '♨️', details: '讓身體好好休息。可選擇：1) 前往「野澤溫泉」體驗傳統溫泉街風情。 2) 參加前往「地獄谷野猿公苑」看雪猴泡湯的行程。 3) 在斑尾當地享受雪鞋健行或單純放鬆。' },
+                { day: '第六天 (四)', title: '能量重啟：全力滑行日', icon: '⚡', details: '經過一日休息，體力滿滿地回歸雪道 -> 挑戰之前未完成的路線，或重溫最愛的粉雪區 -> 盡情享受在斑尾的滑雪樂趣。' },
+                { day: '第七天 (五)', title: '最後的粉雪與重返都會', icon: '⛷️', details: '上午進行最後數小時的滑雪，把握最後的粉雪時光 -> 辦理退房並搭乘巴士至飯山站 -> 搭乘新幹線返回東京 -> 入住預訂的飯店。' },
+                { day: '第八天 (六)', title: '整裝歸途', icon: '🛫', details: '在飯店享用早餐後，整理行囊 -> 根據航班時間，搭乘利木津巴士或電車前往機場 -> 搭機返回台北，結束完美的滑雪遠征。' }
             ];
 
             const transportData = {
@@ -385,22 +369,6 @@
                     reason: '從成田前往神田雪具街的路線較為複雜且昂貴。攜帶行李進行多次轉乘會消耗更多時間與體力，影響第一天的採購效率與狀態。'
                 }
             };
-            
-            const shoppingData = {
-                shinjuku: [
-                    { name: '高島屋時代廣場', desc: '綜合百貨，內含東急手創館。' },
-                    { name: '伊勢丹新宿本店', desc: '高端商品與知名地下食品街。' },
-                    { name: 'Bic Camera', desc: '大型電器量販店。' },
-                    { name: '唐吉訶德', desc: '搜羅藥妝、零食、伴手禮。' }
-                ],
-                shibuya: [
-                     { name: 'Shibuya Scramble Square', desc: '頂樓觀景台與高端商店。' },
-                     { name:- '澀谷Loft', desc: '設計感文具與生活雜貨。' },
-                     { name: '宮下公園', desc: '匯集眾多潮流精品店。' },
-                     { name: 'SHIBUYA109 / 迪士尼商店', desc: '指標性潮流聖地與夢幻周邊。' }
-                ]
-            };
-
 
             const itineraryContainer = document.getElementById('itinerary-container');
             itineraryData.forEach(item => {
@@ -443,7 +411,8 @@
                 const gear = parseInt(gearSlider.value);
                 const lodging = parseInt(lodgingSlider.value);
                 const food = parseInt(foodSlider.value);
-                const fixed = 17560 + 5000 + 29000;
+                // Fixed costs: Transport (17560) + Bus (5000) + 4-day pass (27000) + Tokyo Hotel (15000)
+                const fixed = 17560 + 5000 + 27000 + 15000;
                 
                 gearValue.textContent = gear.toLocaleString();
                 lodgingValue.textContent = lodging.toLocaleString();
@@ -464,12 +433,12 @@
             new Chart(liftPassCtx, {
                 type: 'bar',
                 data: {
-                    labels: ['1日票', '2日票', '3日票'],
+                    labels: ['1日票', '2日票', '3日票', '4日票', '5日票'],
                     datasets: [{
                         label: '每日平均成本 (JPY)',
-                        data: [8000, 7500, 7000],
-                        backgroundColor: ['#9EB8D9', '#7C93C3', '#5a73a3'],
-                        borderColor: ['#9EB8D9', '#7C93C3', '#5a73a3'],
+                        data: [8000, 7500, 7000, 6750, 6500],
+                        backgroundColor: ['#d1d5db', '#9EB8D9', '#7C93C3', '#6a82b3', '#5a73a3'],
+                        borderColor: ['#d1d5db', '#9EB8D9', '#7C93C3', '#6a82b3', '#5a73a3'],
                         borderWidth: 1
                     }]
                 },
@@ -559,43 +528,6 @@
             });
 
             displayTransportInfo('hnd');
-
-
-            const btnShinjuku = document.getElementById('btn-shinjuku');
-            const btnShibuya = document.getElementById('btn-shibuya');
-            const shoppingInfo = document.getElementById('shopping-info');
-
-            function displayShoppingInfo(area) {
-                const data = shoppingData[area];
-                shoppingInfo.innerHTML = '';
-                data.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = 'bg-gray-50 p-4 rounded-lg';
-                    card.innerHTML = `
-                        <h5 class="font-bold text-lg">${item.name}</h5>
-                        <p class="text-gray-600 text-sm">${item.desc}</p>
-                    `;
-                    shoppingInfo.appendChild(card);
-                });
-            }
-
-            btnShinjuku.addEventListener('click', () => {
-                displayShoppingInfo('shinjuku');
-                btnShinjuku.classList.replace('bg-gray-200', 'btn-primary');
-                btnShinjuku.classList.replace('text-gray-700', 'text-white');
-                btnShibuya.classList.replace('btn-primary', 'bg-gray-200');
-                btnShibuya.classList.replace('text-white', 'text-gray-700');
-            });
-
-            btnShibuya.addEventListener('click', () => {
-                displayShoppingInfo('shibuya');
-                btnShibuya.classList.replace('bg-gray-200', 'btn-primary');
-                btnShibuya.classList.replace('text-gray-700', 'text-white');
-                btnShinjuku.classList.replace('btn-primary', 'bg-gray-200');
-                btnShinjuku.classList.replace('text-white', 'text-gray-700');
-            });
-
-            displayShoppingInfo('shinjuku');
 
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const mobileMenu = document.getElementById('mobile-menu');
